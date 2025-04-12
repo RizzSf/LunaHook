@@ -3,117 +3,132 @@
 <head>
   <meta charset="UTF-8">
   <title>Webhook Sender</title>
+  <style>
+    /* ここは元のCSSと同じなので省略せずそのままコピーでOK */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0f0f0f;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .glow-ring {
+      position: absolute;
+      width: 350px;
+      height: 350px;
+      border-radius: 50%;
+      background: conic-gradient(
+        #ff4d4d,
+        #ffff66,
+        #66ff66,
+        #4dd2ff,
+        #ff4d4d
+      );
+      animation: rotate 6s linear infinite;
+      filter: blur(20px);
+      z-index: 1;
+    }
+
+    .webhook-box {
+      position: relative;
+      z-index: 2;
+      background: rgba(20, 20, 20, 0.85);
+      border-radius: 25px;
+      padding: 40px;
+      width: 320px;
+      text-align: center;
+      box-shadow: 0 0 25px rgba(0, 255, 150, 0.2);
+    }
+
+    .webhook-box h2 {
+      color: #fff;
+      margin-bottom: 20px;
+    }
+
+    .webhook-box input,
+    .webhook-box textarea {
+      width: 100%;
+      margin: 10px 0;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      outline: none;
+      font-size: 14px;
+    }
+
+    .webhook-box button {
+      margin-top: 10px;
+      padding: 12px;
+      width: 100%;
+      border: none;
+      border-radius: 20px;
+      background: linear-gradient(90deg, #ff6ec4, #fddb92);
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .webhook-box button:hover {
+      opacity: 0.85;
+    }
+
+    .toggle-box {
+      margin-top: 10px;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    #status {
+      margin-top: 10px;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    @keyframes rotate {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
 </head>
-    <style>
-        /* 全体背景などのスタイル */
-body {
-  margin: 0;
-  padding: 0;
-  background: #0f0f0f;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-}
-
-/* 光るリングのアニメーション */
-.glow-ring {
-  position: absolute;
-  width: 350px;
-  height: 350px;
-  border-radius: 50%;
-  background: conic-gradient(
-    #ff4d4d,
-    #ffff66,
-    #66ff66,
-    #4dd2ff,
-    #ff4d4d
-  );
-  animation: rotate 6s linear infinite;
-  filter: blur(20px);
-  z-index: 1;
-}
-
-/* 中央のWebHookフォーム */
-.webhook-box {
-  position: relative;
-  z-index: 2;
-  background: rgba(20, 20, 20, 0.85);
-  border-radius: 25px;
-  padding: 40px;
-  width: 300px;
-  text-align: center;
-  box-shadow: 0 0 25px rgba(0, 255, 150, 0.2);
-}
-
-/* テキストとボタンなど */
-.webhook-box h2 {
-  color: #fff;
-  margin-bottom: 20px;
-}
-
-.webhook-box input,
-.webhook-box textarea {
-  width: 100%;
-  margin: 10px 0;
-  padding: 12px;
-  border: none;
-  border-radius: 10px;
-  outline: none;
-  font-size: 14px;
-}
-
-.webhook-box button {
-  margin-top: 10px;
-  padding: 12px;
-  width: 100%;
-  border: none;
-  border-radius: 20px;
-  background: linear-gradient(90deg, #ff6ec4, #fddb92);
-  color: #000;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.webhook-box button:hover {
-  opacity: 0.85;
-}
-
-#status {
-  margin-top: 10px;
-  color: #fff;
-  font-size: 14px;
-}
-
-/* 回転アニメーション */
-@keyframes rotate {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-</style>
 <body>
   <div class="glow-ring"></div>
   <div class="webhook-box">
     <h2>Send to Discord</h2>
     <input type="text" id="webhookUrl" placeholder="Webhook URL">
     <input type="text" id="username" placeholder="Username">
+    <input type="text" id="avatarUrl" placeholder="Avatar URL (任意)">
     <textarea id="message" placeholder="Your message"></textarea>
-    <button onclick="sendWebhook()">Send</button>
+    <input type="number" id="interval" placeholder="間隔 (ms) 例: 1000" min="100" step="100">
+    
+    <div class="toggle-box">
+      <label for="spamToggle">スパムモード</label>
+      <input type="checkbox" id="spamToggle">
+    </div>
+    
+    <button onclick="toggleSpam()">Toggle Spam</button>
     <p id="status"></p>
   </div>
 
   <script>
+    let intervalId = null;
+
     function sendWebhook() {
       const webhookUrl = document.getElementById("webhookUrl").value.trim();
       const username = document.getElementById("username").value.trim();
       const message = document.getElementById("message").value.trim();
+      const avatarUrl = document.getElementById("avatarUrl").value.trim();
       const status = document.getElementById("status");
 
       if (!webhookUrl || !username || !message) {
@@ -121,24 +136,46 @@ body {
         return;
       }
 
+      const payload = {
+        username: username,
+        content: message
+      };
+
+      if (avatarUrl) {
+        payload.avatar_url = avatarUrl;
+      }
+
       fetch(webhookUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          username: username,
-          content: message
-        })
+        body: JSON.stringify(payload)
       }).then(res => {
         if (res.ok) {
-          status.textContent = "✅ 成功！";
+          status.textContent = "✅ 送信成功！";
         } else {
           status.textContent = "❌ Webhook URLが正しいか確認してね。";
         }
       }).catch(err => {
         status.textContent = "❌ エラーが発生しました。";
       });
+    }
+
+    function toggleSpam() {
+      const toggle = document.getElementById("spamToggle");
+      const interval = parseInt(document.getElementById("interval").value) || 1000;
+      const status = document.getElementById("status");
+
+      if (toggle.checked) {
+        if (intervalId) clearInterval(intervalId);
+        intervalId = setInterval(sendWebhook, interval);
+        status.textContent = `🚀 スパム開始！（${interval}msごと）`;
+      } else {
+        clearInterval(intervalId);
+        intervalId = null;
+        status.textContent = "🛑 スパム停止しました。";
+      }
     }
   </script>
 </body>
