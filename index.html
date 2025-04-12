@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Webhook Sender</title>
+</head>
+    <style>
+        /* 全体背景などのスタイル */
+body {
+  margin: 0;
+  padding: 0;
+  background: #0f0f0f;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* 光るリングのアニメーション */
+.glow-ring {
+  position: absolute;
+  width: 350px;
+  height: 350px;
+  border-radius: 50%;
+  background: conic-gradient(
+    #ff4d4d,
+    #ffff66,
+    #66ff66,
+    #4dd2ff,
+    #ff4d4d
+  );
+  animation: rotate 6s linear infinite;
+  filter: blur(20px);
+  z-index: 1;
+}
+
+/* 中央のWebHookフォーム */
+.webhook-box {
+  position: relative;
+  z-index: 2;
+  background: rgba(20, 20, 20, 0.85);
+  border-radius: 25px;
+  padding: 40px;
+  width: 300px;
+  text-align: center;
+  box-shadow: 0 0 25px rgba(0, 255, 150, 0.2);
+}
+
+/* テキストとボタンなど */
+.webhook-box h2 {
+  color: #fff;
+  margin-bottom: 20px;
+}
+
+.webhook-box input,
+.webhook-box textarea {
+  width: 100%;
+  margin: 10px 0;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  outline: none;
+  font-size: 14px;
+}
+
+.webhook-box button {
+  margin-top: 10px;
+  padding: 12px;
+  width: 100%;
+  border: none;
+  border-radius: 20px;
+  background: linear-gradient(90deg, #ff6ec4, #fddb92);
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.webhook-box button:hover {
+  opacity: 0.85;
+}
+
+#status {
+  margin-top: 10px;
+  color: #fff;
+  font-size: 14px;
+}
+
+/* 回転アニメーション */
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+</style>
+<body>
+  <div class="glow-ring"></div>
+  <div class="webhook-box">
+    <h2>Send to Discord</h2>
+    <input type="text" id="webhookUrl" placeholder="Webhook URL">
+    <input type="text" id="username" placeholder="Username">
+    <textarea id="message" placeholder="Your message"></textarea>
+    <button onclick="sendWebhook()">Send</button>
+    <p id="status"></p>
+  </div>
+
+  <script>
+    function sendWebhook() {
+      const webhookUrl = document.getElementById("webhookUrl").value.trim();
+      const username = document.getElementById("username").value.trim();
+      const message = document.getElementById("message").value.trim();
+      const status = document.getElementById("status");
+
+      if (!webhookUrl || !username || !message) {
+        status.textContent = "全ての項目を入力してください。";
+        return;
+      }
+
+      fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          username: username,
+          content: message
+        })
+      }).then(res => {
+        if (res.ok) {
+          status.textContent = "✅ 成功！";
+        } else {
+          status.textContent = "❌ Webhook URLが正しいか確認してね。";
+        }
+      }).catch(err => {
+        status.textContent = "❌ エラーが発生しました。";
+      });
+    }
+  </script>
+</body>
+</html>
